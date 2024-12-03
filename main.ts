@@ -4,7 +4,8 @@ import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
 const MONGO_URL = Deno.env.get("MONGO_URL");
 
 if(!MONGO_URL) {
-  throw new Error("Please enter a valid MONGO_URL");
+  console.error("MONGO_URL not found");
+  Deno.exit(1);
 }
 
 const client = new MongoClient(MONGO_URL);
