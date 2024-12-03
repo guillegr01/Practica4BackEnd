@@ -5,7 +5,7 @@ const MONGO_URL = Deno.env.get("MONGO_URL");
 
 if(!MONGO_URL) {
   console.error("MONGO_URL not found");
-  throw Error("Please enter a valid MONGO_URL");
+  throw Error(" enter a valid MONGO_URL");
 }
 
 const client = new MongoClient(MONGO_URL);
