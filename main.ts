@@ -1,11 +1,12 @@
 import { MongoClient } from "mongodb";
 import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
+import { fromModelToUser } from "./utils.ts";
 
 const MONGO_URL = Deno.env.get("MONGO_URL");
 
 if(!MONGO_URL) {
   console.error("MONGO_URL not found");
-  throw Error(" enter a valid MONGO_URL");
+  throw Error("Enter a valid MONGO_URL");
 }
 
 const client = new MongoClient(MONGO_URL);
@@ -27,11 +28,36 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (method==="GET") {
     
-    return new Response("Endpoint not found", {status:404});
+    if (path==="/users") {
+      const usersDB = await UserCollection.find().toArray();
+      if(usersDB.length===0) return new Response("There´s no Users on the DDBB", {status:404});
+      const users = usersDB.map((um:UserModel) => {
+        return fromModelToUser(um);
+      })
+
+      return new Response(JSON.stringify(users));
+    }
 
   }else if (method==="POST") {
-    
-    return new Response("Endpoint not found", {status:404});
+
+    if (path==="/users") {
+      const newUser = await req.json();
+      if(!newUser.name || !newUser.email) return new Response("Bad Request", {status:404});
+
+      const { insertedId } = await UserCollection.insertOne({
+        name: newUser.name,
+        email: newUser.email,
+        created_at: new Date()
+      }); 
+
+      return new Response(JSON.stringify({
+        id: insertedId,
+        name: newUser.name,
+        email: newUser.email,
+        created_at: new Date()
+      }), {status:201});
+
+    }
 
   }else if (method==="PUT") {
     
