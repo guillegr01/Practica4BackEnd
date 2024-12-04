@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
 import { fromModelToUser } from "./utils.ts";
 
@@ -25,6 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
 
   const path = url.pathname;
+  const searchParams = url.searchParams;
 
   if (method==="GET") {
     
@@ -64,6 +65,16 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response("Endpoint not found", {status:404});
 
   }else if (method==="DELETE") {
+
+    if (path==="/users") {
+      const id = searchParams.get("id");
+      if(!id) return new Response("Bad request: param ID is required", {status:400});
+
+      const { deletedCount } = await UserCollection.deleteOne({ _id: new ObjectId(id)})
+      if(deletedCount===0) return new Response("User not found in the DDBB", {status:404});
+
+      return new Response("User deleted succesfully");
+    }
     
     return new Response("Endpoint not found", {status:404});
 
