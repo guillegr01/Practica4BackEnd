@@ -1,6 +1,6 @@
 import { MongoClient, ObjectId } from "mongodb";
 import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
-import { fromModelToUser } from "./utils.ts";
+import { fromModelToProject, fromModelToUser } from "./utils.ts";
 
 const MONGO_URL = Deno.env.get("MONGO_URL");
 
@@ -31,12 +31,26 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (path==="/users") {
       const usersDB = await UserCollection.find().toArray();
-      if(usersDB.length===0) return new Response("There´s no Users on the DDBB", {status:404});
+      if(usersDB.length===0) return new Response("There´s no Users in the DDBB", {status:404});
       const users = usersDB.map((um:UserModel) => {
         return fromModelToUser(um);
       })
 
       return new Response(JSON.stringify(users));
+
+    }else if (path==="/projects") {
+      const projectsDB = await ProjectCollection.find().toArray();
+      const usersDB = await UserCollection.find().toArray();
+      if(projectsDB.length===0 || usersDB.length===0) return new Response("There´s no Projects or Users in the DDBB", {status:404});
+      const projects = projectsDB.map((pm:ProjectModel) => {
+        usersDB.forEach((um:UserModel) => {
+          if (um._id===pm.user_id) {
+            return fromModelToProject(pm,um);
+          }
+        })
+      });
+
+      return new Response(JSON.stringify(projects));
     }
 
   }else if (method==="POST") {
