@@ -140,6 +140,19 @@ const handler = async (req: Request): Promise<Response> => {
         end_date: newProject.end_date,
         user_id: newProject.user_id
       }), {status:201});
+
+    }else if (path==="tasks") {
+      
+      const newTask = await req.json();
+      if(!newTask.title||!newTask.project_id) return new Response("BadRequest: title and project_id params are required", {status:400});
+
+      const projectExistsOnDDBB = await ProjectCollection.findOne({_id: new ObjectId(newTask.project_id as string)});
+      if(!projectExistsOnDDBB) return new Response("Project ID not found", {status:404});
+
+      /*const { insertedId } = await TaskCollection.insertOne({
+
+      })*/
+
     }
 
   }else if (method==="PUT") {
