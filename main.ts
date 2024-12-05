@@ -119,10 +119,19 @@ const handler = async (req: Request): Promise<Response> => {
       if(deletedCount===0) return new Response("User not found in the DDBB", {status:404});
 
       return new Response("User deleted succesfully");
+
+    }else if(path==="/projects") {
+
+      const id = searchParams.get("id");
+      if(!id) return new Response("Bad Request: param ID is required", {status:400});
+
+      const { deletedCount } = await ProjectCollection.deleteOne({_id: new ObjectId(id)});
+      if(deletedCount===0) return new Response("Project not found in the DDBBB", {status:404});
+
+      return new Response("Project deleted successfully");
+
     }
     
-    return new Response("Endpoint not found", {status:404});
-
   }
 
   return new Response("Endpoint not found", {status:404});
