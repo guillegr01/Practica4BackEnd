@@ -43,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
       const usersDB = await UserCollection.find().toArray();
       if(projectsDB.length===0 || usersDB.length===0) return new Response("There´s no Projects or Users in the DDBB", {status:404});
       const projects = projectsDB.map((pm:ProjectModel) => {
-        usersDB.forEach((um:UserModel) => {
+        usersDB.find((um:UserModel) => {
           if (um._id===pm.user_id) {
             return fromModelToProject(pm,um);
           }
@@ -72,6 +72,30 @@ const handler = async (req: Request): Promise<Response> => {
         created_at: new Date()
       }), {status:201});
 
+    }else if (path==="/projects") {
+      const newProject = await req.json();
+      if(!newProject.name||!newProject.start_date||!newProject.user_id) return new Response("Bad Request", {status:400});
+
+      const user_id_DDBB = new ObjectId(newProject.user_id);
+      const userExistsOnDDBB = await UserCollection.findOne({_id: user_id_DDBB});
+      if(!userExistsOnDDBB)return new Response("User ID not found", {status:404});
+
+      const { insertedId } = await ProjectCollection.insertOne({
+        name: newProject.name,
+        description: newProject.description,
+        start_date: new Date(newProject.start_date),
+        end_date: new Date(newProject.end_date),
+        user_id: user_id_DDBB
+      });
+
+      return new Response(JSON.stringify({
+        id: insertedId,
+        name: newProject.name,
+        description: newProject.description,
+        start_date: newProject.start_date,
+        end_date: newProject.end_date,
+        user_id: newProject.user_id
+      }), {status:201});
     }
 
   }else if (method==="PUT") {
