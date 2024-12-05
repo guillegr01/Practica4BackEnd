@@ -1,6 +1,7 @@
 import { MongoClient, ObjectId } from "mongodb";
 import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
 import { fromModelToProject, fromModelToUser } from "./utils.ts";
+import { fromModelToTask } from "./utils.ts";
 
 const MONGO_URL = Deno.env.get("MONGO_URL");
 
@@ -67,6 +68,33 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response("Internal Server Error", { status: 500 });
       }
     
+    }else if (path==="/tasks") {
+      const tasksDB = await TaskCollection.find().toArray();
+      const projectsDB = await ProjectCollection.find().toArray();
+      if(tasksDB.length===0||projectsDB.length===0) return new Response("Ther´s no Tasks os Projects in the DDBB", {status:404});
+
+      try {
+        
+        const tasks = tasksDB.map((tm:TaskModel) => {
+          
+          const taskOwner = projectsDB.find((pm:ProjectModel) => {
+            return pm._id?.toString()===tm.project_id.toString();
+          });
+
+          if(taskOwner===undefined) {
+            throw Error(`Project not found with the specified task project_id: ${tm.project_id.toString()}`);
+          }
+
+          return fromModelToTask(tm, taskOwner);
+
+        });
+
+        return new Response(JSON.stringify(tasks));
+
+      } catch (_error) {
+        return new Response("Internal Server Error", { status: 500 });
+      }
+
     }
 
   }else if (method==="POST") {
