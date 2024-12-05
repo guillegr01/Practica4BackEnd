@@ -43,21 +43,30 @@ const handler = async (req: Request): Promise<Response> => {
       const usersDB = await UserCollection.find().toArray();
       if(projectsDB.length===0 || usersDB.length===0) return new Response("There´s no Projects or Users in the DDBB", {status:404});
  
-      const projects = projectsDB.map((pm:ProjectModel) => {
+      try {
+
+        const projects = projectsDB.map((pm:ProjectModel) => {
         
-        const projectOwner = usersDB.find((um:UserModel) => {
-          if (um._id?.toString() === pm.user_id.toString()) {
-            return um;
-          }
+          const projectOwner = usersDB.find((um:UserModel) => {
+            if (um._id?.toString() === pm.user_id.toString()) {
+              return um;
+            }
+          });
+  
+          if(projectOwner===undefined) {
+            throw Error(`User not found with the specified project user_id: ${pm.user_id.toString()}`);
+          };
+  
+          return fromModelToProject(pm, projectOwner);
+  
         });
 
-        if(projectOwner===undefined) return new Response("Internal Server Error", {status:500});
+        return new Response(JSON.stringify(projects));
 
-        return fromModelToProject(pm, projectOwner);
-
-      });
-
-      return new Response(JSON.stringify(projects));
+      }catch(_error) {
+        return new Response("Internal Server Error", { status: 500 });
+      }
+    
     }
 
   }else if (method==="POST") {
