@@ -141,17 +141,33 @@ const handler = async (req: Request): Promise<Response> => {
         user_id: newProject.user_id
       }), {status:201});
 
-    }else if (path==="tasks") {
+    }else if (path==="/tasks") {
       
       const newTask = await req.json();
-      if(!newTask.title||!newTask.project_id) return new Response("BadRequest: title and project_id params are required", {status:400});
+      if(!newTask.title||!newTask.project_id) return new Response("Bad Request: title and project_id params are required", {status:400});
 
-      const projectExistsOnDDBB = await ProjectCollection.findOne({_id: new ObjectId(newTask.project_id as string)});
+      const project_id_DDBB = new ObjectId(newTask.project_id as string);
+      const projectExistsOnDDBB = await ProjectCollection.findOne({_id: project_id_DDBB});
       if(!projectExistsOnDDBB) return new Response("Project ID not found", {status:404});
 
-      /*const { insertedId } = await TaskCollection.insertOne({
+      const { insertedId } = await TaskCollection.insertOne({
+        title: newTask.title,
+        description: newTask.description ? newTask.description:undefined,
+        status: 'pending',
+        created_at: new Date(),
+        due_date: newTask.due_date ? new Date(newTask.due_date):undefined,
+        project_id: project_id_DDBB
+      });
 
-      })*/
+      return new Response(JSON.stringify({
+        id: insertedId,
+        title: newTask.title,
+        description: newTask.description,
+        status: 'pending',
+        created_at: new Date(),
+        due_date: newTask.due_date,
+        project_id: newTask.project_id
+      }), {status:201});
 
     }
 

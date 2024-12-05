@@ -1,4 +1,3 @@
-import type { Collection } from "mongodb";
 import type { User, Project, Task } from "./types.ts";
 import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
 
