@@ -69,22 +69,22 @@ const handler = async (req: Request): Promise<Response> => {
         id: insertedId,
         name: newUser.name,
         email: newUser.email,
-        created_at: new Date()
+        created_at: newUser.created_at
       }), {status:201});
 
     }else if (path==="/projects") {
       const newProject = await req.json();
       if(!newProject.name||!newProject.start_date||!newProject.user_id) return new Response("Bad Request", {status:400});
 
-      const user_id_DDBB = new ObjectId(newProject.user_id);
+      const user_id_DDBB = new ObjectId(newProject.user_id as string);
       const userExistsOnDDBB = await UserCollection.findOne({_id: user_id_DDBB});
       if(!userExistsOnDDBB)return new Response("User ID not found", {status:404});
 
       const { insertedId } = await ProjectCollection.insertOne({
         name: newProject.name,
-        description: newProject.description,
+        description: newProject.description ? newProject.description:undefined,
         start_date: new Date(newProject.start_date),
-        end_date: new Date(newProject.end_date),
+        end_date: newProject.end_date ? new Date(newProject.end_date):undefined,
         user_id: user_id_DDBB
       });
 
