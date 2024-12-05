@@ -162,10 +162,10 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({
         id: insertedId,
         title: newTask.title,
-        description: newTask.description,
+        description: newTask.description  ? newTask.description:null,
         status: 'pending',
         created_at: new Date(),
-        due_date: newTask.due_date,
+        due_date: newTask.due_date ? newTask.due_date:null,
         project_id: newTask.project_id
       }), {status:201});
 
@@ -195,6 +195,16 @@ const handler = async (req: Request): Promise<Response> => {
       if(deletedCount===0) return new Response("Project not found in the DDBBB", {status:404});
 
       return new Response("Project deleted successfully");
+
+    }else if(path==="/tasks") {
+
+      const id = searchParams.get("id");
+      if(!id) return new Response("Bad Request: ID param is required", {status:400});
+
+      const { deletedCount } = await TaskCollection.deleteOne({_id: new ObjectId(id)});
+      if(deletedCount===0) return new Response("Task not found in DDBB", {status:404});
+
+      return new Response("Task deleted succesfully");
 
     }
     
