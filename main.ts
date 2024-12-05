@@ -69,7 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
         id: insertedId,
         name: newUser.name,
         email: newUser.email,
-        created_at: newUser.created_at
+        created_at: new Date()  //no podría poner created_at: newUser.created_at ya que ese valor no viene en el body de entrada
       }), {status:201});
 
     }else if (path==="/projects") {
