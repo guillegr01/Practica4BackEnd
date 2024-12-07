@@ -113,6 +113,24 @@ const handler = async (req: Request): Promise<Response> => {
 
       return new Response(JSON.stringify(tasksDBbyProjectID));
 
+    }else if (path==="/projects/by-user") {
+      
+      const user_id_url = searchParams.get("user_id");
+      if(!user_id_url) return new Response("Bad Request: user_id param is required", {status:400});
+
+      const usersDB = await UserCollection.find().toArray();
+      if(usersDB.length===0) return new Response("No users found in DDBB", {status:404});
+      const user_idExists = usersDB.some((um:UserModel) => {
+        return um._id?.toString()===user_id_url;
+      });
+
+      if(user_idExists===false) return new Response("User_id not found in the DDBB", {status:404});
+
+      const projectsDBbyUserID = await ProjectCollection.find({user_id: new ObjectId(user_id_url)}).toArray();
+      if(projectsDBbyUserID.length===0) return new Response(`No projects found with the user_id ${user_id_url} in DDBB`, {status:404});
+
+      return new Response(JSON.stringify(projectsDBbyUserID));
+
     }
 
   }else if (method==="POST") {
