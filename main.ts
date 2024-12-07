@@ -1,7 +1,6 @@
 import { MongoClient, ObjectId } from "mongodb";
 import type { UserModel, ProjectModel, TaskModel } from "./types.ts";
-import { fromModelToProject, fromModelToUser } from "./utils.ts";
-import { fromModelToTask } from "./utils.ts";
+import { fromModelToProject, fromModelToTask, fromModelToUser } from "./utils.ts";
 
 const MONGO_URL = Deno.env.get("MONGO_URL");
 
@@ -203,6 +202,35 @@ const handler = async (req: Request): Promise<Response> => {
         created_at: new Date(),
         due_date: newTask.due_date ? newTask.due_date:null,
         project_id: newTask.project_id
+      }), {status:201});
+
+    }else if (path==="/tasks/move") {
+      
+      const taskToMove = await req.json();
+      if(!taskToMove.task_id||!taskToMove.destination_project_id) return new Response("Bad Request: task_id and destination_project_id params are required", {status:400});
+
+      const task_id_DDBB = new ObjectId(taskToMove.task_id as string);
+      const taskExistsOnDDBB = await TaskCollection.findOne({_id: task_id_DDBB});
+      if(!taskExistsOnDDBB) return new Response(`The task with the id ${taskToMove.task_id} isn´t found in DDBB`, {status:404});
+
+      const destination_project_id_DDBB = new ObjectId(taskToMove.destination_project_id as string);
+      const destinationProjectExistsOnDDBB = await ProjectCollection.findOne({_id: destination_project_id_DDBB});
+      if(!destinationProjectExistsOnDDBB) return new Response(`The destination project with the id ${taskToMove.destination_project_id} isn´t found in DDBB`, {status:404});
+
+      const {modifiedCount} = await TaskCollection.updateOne(
+        {_id:task_id_DDBB},
+        {$set: {project_id:destination_project_id_DDBB}}
+      );
+
+      if(modifiedCount===0) return new Response("Error moving the task to another project", {status:500});
+
+      return new Response(JSON.stringify({
+        "message": "Task moved successfully.",
+        "Task" : {
+          id: taskToMove.task_id,
+          title: taskExistsOnDDBB.title,
+          project_id: taskToMove.destination_project_id
+        }
       }), {status:201});
 
     }
