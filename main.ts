@@ -95,6 +95,24 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response("Internal Server Error", { status: 500 });
       }
 
+    }else if (path==="/tasks/by-project") {
+      
+      const project_id_url = searchParams.get("project_id");
+      if(!project_id_url) return new Response("Bad Request: project_id param is required", {status:400});
+
+      const projectsDB = await ProjectCollection.find().toArray();
+      if(projectsDB.length===0) return new Response("No projects found in DDBB", {status:404});
+      const project_idExists = projectsDB.some((pm:ProjectModel) => {
+        return pm._id?.toString()===project_id_url;
+      });
+
+      if(project_idExists===false) return new Response("Project_id not found in the DDBB", {status:404});
+
+      const tasksDBbyProjectID = await TaskCollection.find({project_id: new ObjectId(project_id_url)}).toArray();
+      if(tasksDBbyProjectID.length===0) return new Response(`No tasks found with the project_id ${project_id_url} in DDBB`, {status:404});
+
+      return new Response(JSON.stringify(tasksDBbyProjectID));
+
     }
 
   }else if (method==="POST") {
@@ -170,10 +188,6 @@ const handler = async (req: Request): Promise<Response> => {
       }), {status:201});
 
     }
-
-  }else if (method==="PUT") {
-    
-    return new Response("Endpoint not found", {status:404});
 
   }else if (method==="DELETE") {
 
