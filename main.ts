@@ -31,17 +31,26 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (path==="/users") {
       const usersDB = await UserCollection.find().toArray();
-      if(usersDB.length===0) return new Response("There´s no Users in the DDBB", {status:404});
+      if(usersDB.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
+
       const users = usersDB.map((um:UserModel) => {
         return fromModelToUser(um);
-      })
+      });
 
       return new Response(JSON.stringify(users));
 
     }else if (path==="/projects") {
       const projectsDB = await ProjectCollection.find().toArray();
       const usersDB = await UserCollection.find().toArray();
-      if(projectsDB.length===0 || usersDB.length===0) return new Response("There´s no Projects or Users in the DDBB", {status:404});
+      if(projectsDB.length===0 || usersDB.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
  
       try {
 
@@ -64,13 +73,22 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(JSON.stringify(projects));
 
       }catch(_error) {
-        return new Response("Internal Server Error", { status: 500 });
+        return new Response(JSON.stringify({
+          "error": true,
+          "status": 500,
+          "message": "An internal server error occurred. Please try again later."
+        }), { status: 500 });
       }
     
     }else if (path==="/tasks") {
       const tasksDB = await TaskCollection.find().toArray();
       const projectsDB = await ProjectCollection.find().toArray();
-      if(tasksDB.length===0||projectsDB.length===0) return new Response("Ther´s no Tasks os Projects in the DDBB", {status:404});
+
+      if(tasksDB.length===0||projectsDB.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       try {
         
@@ -91,42 +109,85 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(JSON.stringify(tasks));
 
       } catch (_error) {
-        return new Response("Internal Server Error", { status: 500 });
+        return new Response(JSON.stringify({
+          "error": true,
+          "status": 500,
+          "message": "An internal server error occurred. Please try again later."
+        }), { status: 500 });
       }
 
     }else if (path==="/tasks/by-project") {
       
       const project_id_url = searchParams.get("project_id");
-      if(!project_id_url) return new Response("Bad Request: project_id param is required", {status:400});
+
+      if(!project_id_url) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const projectsDB = await ProjectCollection.find().toArray();
-      if(projectsDB.length===0) return new Response("No projects found in DDBB", {status:404});
+
+      if(projectsDB.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
+
       const project_idExists = projectsDB.some((pm:ProjectModel) => {
         return pm._id?.toString()===project_id_url;
       });
 
-      if(project_idExists===false) return new Response("Project_id not found in the DDBB", {status:404});
+      if(project_idExists===false) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       const tasksDBbyProjectID = await TaskCollection.find({project_id: new ObjectId(project_id_url)}).toArray();
-      if(tasksDBbyProjectID.length===0) return new Response(`No tasks found with the project_id ${project_id_url} in DDBB`, {status:404});
+
+      if(tasksDBbyProjectID.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       return new Response(JSON.stringify(tasksDBbyProjectID));
 
     }else if (path==="/projects/by-user") {
       
       const user_id_url = searchParams.get("user_id");
-      if(!user_id_url) return new Response("Bad Request: user_id param is required", {status:400});
+      if(!user_id_url) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const usersDB = await UserCollection.find().toArray();
-      if(usersDB.length===0) return new Response("No users found in DDBB", {status:404});
+
+      if(usersDB.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
+
       const user_idExists = usersDB.some((um:UserModel) => {
         return um._id?.toString()===user_id_url;
       });
 
-      if(user_idExists===false) return new Response("User_id not found in the DDBB", {status:404});
+      if(user_idExists===false) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       const projectsDBbyUserID = await ProjectCollection.find({user_id: new ObjectId(user_id_url)}).toArray();
-      if(projectsDBbyUserID.length===0) return new Response(`No projects found with the user_id ${user_id_url} in DDBB`, {status:404});
+
+      if(projectsDBbyUserID.length===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       return new Response(JSON.stringify(projectsDBbyUserID));
 
@@ -136,7 +197,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (path==="/users") {
       const newUser = await req.json();
-      if(!newUser.name || !newUser.email) return new Response("Bad Request", {status:404});
+      if(!newUser.name || !newUser.email) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const { insertedId } = await UserCollection.insertOne({
         name: newUser.name,
@@ -153,11 +218,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     }else if (path==="/projects") {
       const newProject = await req.json();
-      if(!newProject.name||!newProject.start_date||!newProject.user_id) return new Response("Bad Request", {status:400});
+      if(!newProject.name||!newProject.start_date||!newProject.user_id) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:400});
 
       const user_id_DDBB = new ObjectId(newProject.user_id as string);
       const userExistsOnDDBB = await UserCollection.findOne({_id: user_id_DDBB});
-      if(!userExistsOnDDBB)return new Response("User ID not found", {status:404});
+      if(!userExistsOnDDBB)return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       const { insertedId } = await ProjectCollection.insertOne({
         name: newProject.name,
@@ -179,11 +252,19 @@ const handler = async (req: Request): Promise<Response> => {
     }else if (path==="/tasks") {
       
       const newTask = await req.json();
-      if(!newTask.title||!newTask.project_id) return new Response("Bad Request: title and project_id params are required", {status:400});
+      if(!newTask.title||!newTask.project_id) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const project_id_DDBB = new ObjectId(newTask.project_id as string);
       const projectExistsOnDDBB = await ProjectCollection.findOne({_id: project_id_DDBB});
-      if(!projectExistsOnDDBB) return new Response("Project ID not found", {status:404});
+      if(!projectExistsOnDDBB) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       const { insertedId } = await TaskCollection.insertOne({
         title: newTask.title,
@@ -207,22 +288,38 @@ const handler = async (req: Request): Promise<Response> => {
     }else if (path==="/tasks/move") {
       
       const taskToMove = await req.json();
-      if(!taskToMove.task_id||!taskToMove.destination_project_id) return new Response("Bad Request: task_id and destination_project_id params are required", {status:400});
+      if(!taskToMove.task_id||!taskToMove.destination_project_id) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const task_id_DDBB = new ObjectId(taskToMove.task_id as string);
       const taskExistsOnDDBB = await TaskCollection.findOne({_id: task_id_DDBB});
-      if(!taskExistsOnDDBB) return new Response(`The task with the id ${taskToMove.task_id} isn´t found in DDBB`, {status:404});
+      if(!taskExistsOnDDBB) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       const destination_project_id_DDBB = new ObjectId(taskToMove.destination_project_id as string);
       const destinationProjectExistsOnDDBB = await ProjectCollection.findOne({_id: destination_project_id_DDBB});
-      if(!destinationProjectExistsOnDDBB) return new Response(`The destination project with the id ${taskToMove.destination_project_id} isn´t found in DDBB`, {status:404});
+      if(!destinationProjectExistsOnDDBB) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       const {modifiedCount} = await TaskCollection.updateOne(
         {_id:task_id_DDBB},
         {$set: {project_id:destination_project_id_DDBB}}
       );
 
-      if(modifiedCount===0) return new Response("Error moving the task to another project", {status:500});
+      if(modifiedCount===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 500,
+        "message": "An internal server error occurred. Please try again later."
+      }), {status:500});
 
       return new Response(JSON.stringify({
         "message": "Task moved successfully.",
@@ -239,30 +336,54 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (path==="/users") {
       const id = searchParams.get("id");
-      if(!id) return new Response("Bad request: param ID is required", {status:400});
+      if(!id) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const { deletedCount } = await UserCollection.deleteOne({ _id: new ObjectId(id)})
-      if(deletedCount===0) return new Response("User not found in the DDBB", {status:404});
+      if(deletedCount===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       return new Response("User deleted succesfully");
 
     }else if(path==="/projects") {
 
       const id = searchParams.get("id");
-      if(!id) return new Response("Bad Request: param ID is required", {status:400});
+      if(!id) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const { deletedCount } = await ProjectCollection.deleteOne({_id: new ObjectId(id)});
-      if(deletedCount===0) return new Response("Project not found in the DDBBB", {status:404});
+      if(deletedCount===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       return new Response("Project deleted successfully");
 
     }else if(path==="/tasks") {
 
       const id = searchParams.get("id");
-      if(!id) return new Response("Bad Request: ID param is required", {status:400});
+      if(!id) return new Response(JSON.stringify({
+        "error": true,
+        "status": 400,
+        "message": "Bad Request."
+      }), {status:400});
 
       const { deletedCount } = await TaskCollection.deleteOne({_id: new ObjectId(id)});
-      if(deletedCount===0) return new Response("Task not found in DDBB", {status:404});
+      if(deletedCount===0) return new Response(JSON.stringify({
+        "error": true,
+        "status": 404,
+        "message": "The requested resource was not found."
+      }), {status:404});
 
       return new Response("Task deleted succesfully");
 
@@ -270,7 +391,11 @@ const handler = async (req: Request): Promise<Response> => {
     
   }
 
-  return new Response("Endpoint not found", {status:404});
+  return new Response(JSON.stringify({
+    "error": true,
+    "status": 404,
+    "message": "Endpoint not found." 
+  }), {status:404});
 
 }
 
